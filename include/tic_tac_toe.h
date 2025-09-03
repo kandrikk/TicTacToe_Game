@@ -17,15 +17,22 @@ typedef struct {
 
 void tic_tac_toe();
 void draw_field(tictac board);
-void initialize_tictac(tictac *tic);
+void update_field(tictac tic);
+void backlight(tictac tic);
 bool control(tictac *tic);
+
 void move(tictac *tic);
+void move_up(tictac *tic);
+void move_down(tictac *tic);
+void move_left(tictac *tic);
+void move_right(tictac *tic);
+
 bool is_winner(tictac tic);
 bool check_win(tictac tic, int id, char mv);
 
 bool if_horizontal(tictac tic, int id, char mv);
 bool if_vertical(tictac tic, int id, char mv);
 bool if_diagonal(tictac tic, char mv);
-void update_field(tictac tic);
 
+void initialize_tictac(tictac *tic);
 void init_ncurses();

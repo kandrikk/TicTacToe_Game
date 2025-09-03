@@ -7,7 +7,9 @@ void init_ncurses() {
     start_color();
     init_pair(1, COLOR_RED, COLOR_BLACK);
     init_pair(2, COLOR_GREEN, COLOR_BLACK);
+    init_pair(3, COLOR_WHITE, COLOR_WHITE);
     
+    keypad(stdscr, TRUE);
     noecho();
 }
 
@@ -16,6 +18,8 @@ void initialize_tictac(tictac *tic) {
     while (w != '9' + 1) {
         tic->field.push_back(w++);
     }
+
+    tic->position = 5;
 
     tic->coordinates.push_back(std::make_pair(2, 3));
     tic->coordinates.push_back(std::make_pair(2, 7));
