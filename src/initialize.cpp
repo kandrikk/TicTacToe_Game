@@ -7,16 +7,18 @@ void init_ncurses() {
     start_color();
     init_pair(1, COLOR_RED, COLOR_BLACK);
     init_pair(2, COLOR_GREEN, COLOR_BLACK);
-    init_pair(3, COLOR_WHITE, COLOR_WHITE);
+    init_pair(3, COLOR_WHITE, COLOR_BLACK);
+    init_pair(4, COLOR_WHITE, COLOR_WHITE);
     
     keypad(stdscr, TRUE);
     noecho();
 }
 
 void initialize_tictac(tictac *tic) {
-    int w = '1';
-    while (w != '9' + 1) {
-        tic->field.push_back(w++);
+    int w = 0;
+    while (w != 10) {
+        tic->field.push_back(' ');
+        w++;
     }
 
     tic->position = 5;

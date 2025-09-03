@@ -19,7 +19,8 @@ void tic_tac_toe();
 void draw_field(tictac board);
 void update_field(tictac tic);
 void backlight(tictac tic);
-bool control(tictac *tic);
+
+int control(tictac *tic);
 
 void move(tictac *tic);
 void move_up(tictac *tic);
