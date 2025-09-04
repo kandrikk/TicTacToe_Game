@@ -1,38 +1,28 @@
 #include "tic_tac_toe.h"
 
-void tic_tac_toe() {
+void game() {
     tictac tic;
-    int y;
     initialize_tictac(&tic);
     menu(&tic);
-    draw_field(tic);
+    draw_field();
 
-    while (true) {
-        mvprintw(15, 15, "%d", tic.position);
-        mvprintw(16, 15, "%d", tic.data_move);
+    while (!tic.stop) {
 
-        int color = (tic.move == 'x') ? 2 : 1;
-        attron(COLOR_PAIR(color));
-        mvprintw(1, 2, "Move: %c", tic.move);
-        attroff(COLOR_PAIR(color));
-
-        backlight(tic);
-        
-        y = control(&tic);
-        if (y == 1) {
-            update_field(tic);
-            if (is_winner(tic)) break;
-            if (tic.robot) move_robot(&tic);
-            if (is_winner(tic)) break;
-        } else if (y == -1) {
-            break;
+        if (move(&tic)) {
+            put_simbol(&tic);
+            check_win(&tic);
+            tic.simbol = switch_simbol(tic);
+            robot_move(&tic);
         }
     }
 }
 
 void menu(tictac *tic) {
-    mvprintw(2, 2, "Play to freinds - 1: \n  Play to bot - 2: ");
     bool series = 1;
+
+    mvprintw(2, 2, "Play to freinds - 1:");
+    mvprintw(3, 2, "Play to bot - 2:");
+
     while (series) {
     char ch = getch();
     
@@ -45,17 +35,13 @@ void menu(tictac *tic) {
             tic->robot = true;
             series = false;
             break;
-
-        default:
-            break;
         }
     }
 }
 
-void draw_field(tictac tic) {
+void draw_field() {
     int y = 2;
     int x = 2;
-    tic.position = 5;
     
     clear();
     mvprintw(y++, x, "   |   |  ");
@@ -64,19 +50,27 @@ void draw_field(tictac tic) {
     mvprintw(y++, x, "---|---|---");
     mvprintw(y++, x, "   |   |  ");
     refresh();
+
+    attron(COLOR_PAIR(2));
+    mvprintw(1, 2, "Move: x");
+    attroff(COLOR_PAIR(2));
 }
 
 void update_field(tictac tic) {
-    int simbol = (tic.move == 'x') ? 'o' : 'x';
-    int color = (simbol == 'x') ? 2 : 1;
+    int color = select_color(tic.simbol);
+    char back_simbol = switch_simbol(tic);
+    int color2 = select_color(back_simbol);
 
     int y = tic.coordinates[tic.position - 1].first;
     int x = tic.coordinates[tic.position - 1].second;
 
     attron(COLOR_PAIR(color));
-    mvprintw(y, x, "%c", simbol);
-    mvprintw(1, 2, "Move: %c", tic.move);
+    mvprintw(y, x, "%c", tic.simbol);
     attroff(COLOR_PAIR(color));
+
+    attron(COLOR_PAIR(color2));
+    mvprintw(1, 2, "Move: %c", back_simbol);
+    attroff(COLOR_PAIR(color2));
 }
 
 void backlight(tictac tic) {
@@ -85,11 +79,6 @@ void backlight(tictac tic) {
     int y = tic.coordinates[tic.position - 1].first;
     int x = tic.coordinates[tic.position - 1].second;
 
-    int color;
-    if (back == 'x') {color = 2;} 
-    else if (back == 'o') {color = 1;}
-    else {color = 3;}
-
     attron(COLOR_PAIR(4));
     mvprintw(y, x, " ");
     attroff(COLOR_PAIR(4));
@@ -97,73 +86,80 @@ void backlight(tictac tic) {
 
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
+    int color = select_color(back);
     attron(COLOR_PAIR(color));
     mvprintw(y, x, "%c", back);
     attroff(COLOR_PAIR(color));
     refresh();
 }
 
-bool is_winner(tictac tic) {
-    update_field(tic);
-    
-    char mv = (tic.move == 'x') ? 'o' : 'x';
+void check_win(tictac *tic) {
+    update_field(*tic);
 
     for (int i = 0; i < 3; ++i) {
-        if ((check_win(tic, i, mv))) return true;
+        if ((is_winner(*tic, i))) {
+            tic->stop = true;
+            refresh();
+            SLEEP;
+        }
     }
-
-    return false;
 }
 
-bool check_win(tictac tic, int id, char mv) {
+bool is_winner(tictac tic, int id) {
     bool res = false;
 
-    int simbol = (tic.move == 'x') ? 'o' : 'x';
-    int color = (simbol == 'x') ? 2 : 1;
+    int color = select_color(tic.simbol);
 
-    if (if_horizontal(tic, id, mv) || if_vertical(tic, id, mv) || if_diagonal(tic, mv)) {
+    if (if_horizontal(tic, id) || if_vertical(tic, id) || if_diagonal(tic)) {
         attron(COLOR_PAIR(color));
-        mvprintw(10, 10, "Winner: %c", mv - 32);
+        mvprintw(1, 2, "Winner: %c", tic.simbol - 32);
         attroff(COLOR_PAIR(color));
         res =  true;
     }
 
-    if (tic.data_move == 9 && !res) {
+    if (tic.number_puts == 9 && !res) {
         attron(COLOR_PAIR(1));
-        mvprintw(10, 10, "Draw");
+        mvprintw(1, 2, "Draw    ");
         attroff(COLOR_PAIR(1));
         res = true;
-    }
-
-    if (res) {
-        refresh();
-        SLEEP;
     }
 
     return res;
 }
 
-bool if_horizontal(tictac tic, int id, char mv) {
-    if (tic.field[id * 3] == mv && tic.field[id * 3 + 1] == mv && tic.field[id * 3 + 2] == mv) return true;
+void put_simbol(tictac *tic) {
+    tic->field[tic->position - 1] = tic->simbol;
 
-    return false;
+    tic->number_puts++;
+
+    update_field(*tic);
 }
 
-bool if_vertical(tictac tic, int id, char mv) {
-    if (tic.field[id] == mv && tic.field[id + 3] == mv && tic.field[id + 6] == mv) return true;
+void robot_move(tictac *tic) {
+    if (!tic->robot || tic->stop) return;
 
-    return false;
+    int pos = robot_choos(*tic);
+    tic->position = pos;
+
+    put_simbol(tic);
+    check_win(tic);
+    update_field(*tic);
+
+    tic->simbol = switch_simbol(*tic);
 }
 
-bool if_diagonal(tictac tic, char mv) {
-    if ((tic.field[0] == mv && tic.field[4] == mv && tic.field[8] == mv) || 
-        (tic.field[6] == mv && tic.field[4] == mv && tic.field[2] == mv)) return true;
-    
-    return false;
+int robot_choos(tictac tic) {
+    int i;
+
+    do {
+        i = rand() % 9;
+    } while (tic.field[i] != ' ');
+
+    return i + 1;
 }
 
-int control(tictac *tic) {
-    int res = 0;
+bool move(tictac *tic) {
+    int res = false;
     int key = getch();
 
     switch (key) {
@@ -184,42 +180,25 @@ int control(tictac *tic) {
         break;
 
     case ' ':
-        move(tic);
-        res = 1;
+        if (check_position(*tic)) res = true;
         break;
 
     case 'Q':
     case 'q':
-        res = -1;
+        tic->stop = true;
         break;
     }
+
+    backlight(*tic);
     
     return res;
 }
 
-void move(tictac *tic) {
-    if (tic->field[tic->position - 1] == 'x' 
-        || tic->field[tic->position - 1] == 'o') return;
-    tic->field[tic->position - 1] = tic->move;
+bool check_position(tictac tic) {
+    if (tic.field[tic.position - 1] == 'x' 
+    || tic.field[tic.position - 1] == 'o') return false;
 
-    tic->move = (tic->move == 'x') ? 'o' : 'x';
-
-    tic->data_move++;
-}
-
-void move_robot(tictac *tic) {
-    while (true) {
-    std::srand(time(nullptr));
-    int i = rand() % 9 + 1;
-
-        if (tic->field[i - 1] == ' ') {
-            tic->position = i;
-            move(tic);
-            ++i;
-            break;
-        }
-    }
-    update_field(*tic);
+    return true;
 }
 
 void move_up(tictac *tic) {
@@ -239,3 +218,55 @@ void move_right(tictac *tic) {
     int n = tic->position;
     if ((n != 3) && (n != 6) && (n != 9)) tic->position += 1;
 }
+
+bool if_horizontal(tictac tic, int id) {
+    if (tic.field[id * 3] == tic.simbol &&
+         tic.field[id * 3 + 1] == tic.simbol &&
+          tic.field[id * 3 + 2] == tic.simbol) return true;
+
+    return false;
+}
+
+bool if_vertical(tictac tic, int id) {
+    if (tic.field[id] == tic.simbol &&
+         tic.field[id + 3] == tic.simbol &&
+          tic.field[id + 6] == tic.simbol) return true;
+
+    return false;
+}
+
+bool if_diagonal(tictac tic) {
+    if ((tic.field[0] == tic.simbol && tic.field[4] == tic.simbol && tic.field[8] == tic.simbol) || 
+        (tic.field[6] == tic.simbol && tic.field[4] == tic.simbol && tic.field[2] == tic.simbol)) return true;
+    
+    return false;
+}
+
+int select_color(char simbol) {
+    int color;
+    switch (simbol) {
+    case 'o':
+        color = 1;
+        break;
+
+    case 'x':
+        color = 2;
+        break;
+
+    default:
+        color = 3;
+        break;
+    }
+
+    return color;
+}
+
+char switch_simbol(tictac tic) {
+    char res = tic.simbol;
+    if (!tic.stop) {
+        res = (res == 'x') ? 'o' : 'x';
+    }
+
+    return res;
+}
+

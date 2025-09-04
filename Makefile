@@ -1,7 +1,7 @@
 CXX = g++
 INCLUDE = -Iinclude
 CXXFLAGS = $(INCLUDE) -lncurses -Wall -Wextra -Werror
-SRC = src/main.cpp src/tic_tac_toe.cpp src/initialize.cpp
+SRC = src/*
 TARGET = build/TicTacToeGame
 
 all:

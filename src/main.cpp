@@ -3,7 +3,7 @@
 int main() {
     init_ncurses();
 
-    tic_tac_toe();
+    game();
 
     endwin();
     return 0;
