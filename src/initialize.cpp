@@ -23,6 +23,8 @@ void initialize_tictac(tictac *tic) {
 
     tic->position = 5;
 
+    tic->robot = false;
+
     tic->coordinates.push_back(std::make_pair(2, 3));
     tic->coordinates.push_back(std::make_pair(2, 7));
     tic->coordinates.push_back(std::make_pair(2, 11));

@@ -2,15 +2,19 @@
 
 void tic_tac_toe() {
     tictac tic;
-    initialize_tictac(&tic);
-    draw_field(tic);
     int y;
-
+    initialize_tictac(&tic);
+    menu(&tic);
+    draw_field(tic);
 
     while (true) {
         mvprintw(15, 15, "%d", tic.position);
         mvprintw(16, 15, "%d", tic.data_move);
+
+        int color = (tic.move == 'x') ? 2 : 1;
+        attron(COLOR_PAIR(color));
         mvprintw(1, 2, "Move: %c", tic.move);
+        attroff(COLOR_PAIR(color));
 
         backlight(tic);
         
@@ -18,9 +22,33 @@ void tic_tac_toe() {
         if (y == 1) {
             update_field(tic);
             if (is_winner(tic)) break;
+            if (tic.robot) move_robot(&tic);
+            if (is_winner(tic)) break;
         } else if (y == -1) {
             break;
-        } 
+        }
+    }
+}
+
+void menu(tictac *tic) {
+    mvprintw(2, 2, "Play to freinds - 1: \n  Play to bot - 2: ");
+    bool series = 1;
+    while (series) {
+    char ch = getch();
+    
+        switch (ch) {
+        case '1':
+            series = false;
+            break;
+
+        case '2':
+            tic->robot = true;
+            series = false;
+            break;
+
+        default:
+            break;
+        }
     }
 }
 
@@ -47,6 +75,7 @@ void update_field(tictac tic) {
 
     attron(COLOR_PAIR(color));
     mvprintw(y, x, "%c", simbol);
+    mvprintw(1, 2, "Move: %c", tic.move);
     attroff(COLOR_PAIR(color));
 }
 
@@ -176,6 +205,21 @@ void move(tictac *tic) {
     tic->move = (tic->move == 'x') ? 'o' : 'x';
 
     tic->data_move++;
+}
+
+void move_robot(tictac *tic) {
+    while (true) {
+    std::srand(time(nullptr));
+    int i = rand() % 9 + 1;
+
+        if (tic->field[i - 1] == ' ') {
+            tic->position = i;
+            move(tic);
+            ++i;
+            break;
+        }
+    }
+    update_field(*tic);
 }
 
 void move_up(tictac *tic) {

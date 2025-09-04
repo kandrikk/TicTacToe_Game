@@ -5,9 +5,10 @@
 #include <thread>
 #include <utility>
 
-#define SLEEP std::this_thread::sleep_for(std::chrono::seconds(2));
+#define SLEEP std::this_thread::sleep_for(std::chrono::seconds(1));
 
 typedef struct {
+    bool robot;
     char move;
     int data_move;
     int position;
@@ -21,6 +22,9 @@ void update_field(tictac tic);
 void backlight(tictac tic);
 
 int control(tictac *tic);
+
+void menu(tictac *tic);
+void move_robot(tictac *tic);
 
 void move(tictac *tic);
 void move_up(tictac *tic);
