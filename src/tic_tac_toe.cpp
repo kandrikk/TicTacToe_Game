@@ -44,11 +44,11 @@ void draw_field() {
     int x = 2;
     
     clear();
-    mvprintw(y++, x, "   |   |  ");
+    mvprintw(y++, x, "   |   |   ");
     mvprintw(y++, x, "---|---|---");
-    mvprintw(y++, x, "   |   |  ");
+    mvprintw(y++, x, "   |   |   ");
     mvprintw(y++, x, "---|---|---");
-    mvprintw(y++, x, "   |   |  ");
+    mvprintw(y++, x, "   |   |   ");
     refresh();
 
     attron(COLOR_PAIR(2));
@@ -136,6 +136,7 @@ void put_simbol(tictac *tic) {
 }
 
 void robot_move(tictac *tic) {
+    int back_pos = tic->position;
     if (!tic->robot || tic->stop) return;
 
     int pos = robot_choos(*tic);
@@ -146,6 +147,7 @@ void robot_move(tictac *tic) {
     update_field(*tic);
 
     tic->simbol = switch_simbol(*tic);
+    tic->position = back_pos;
 }
 
 int robot_choos(tictac tic) {
