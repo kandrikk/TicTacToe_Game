@@ -10,7 +10,7 @@ void game() {
 
         if (move(&tic)) {
             put_simbol(&tic);
-            check_win(&tic);
+            evaluate_game_state(&tic);
             tic.simbol = switch_simbol(tic);
             robot_move(&tic);
         }
@@ -93,38 +93,36 @@ void backlight(tictac tic) {
     refresh();
 }
 
-void check_win(tictac *tic) {
+void evaluate_game_state(tictac *tic) {
     update_field(*tic);
+    int mode = 0;
 
-    for (int i = 0; i < 3; ++i) {
-        if ((is_winner(*tic, i))) {
-            tic->stop = true;
-            refresh();
-            SLEEP;
-        }
+    if (check_win(tic->field, tic->simbol)) {
+        mode = 1;
+    } else if (tic->number_puts == 9) mode = -1;
+
+    if (mode != 0) {
+        display_game_result(mode, tic->simbol);
+        tic->stop = true;
+        refresh();
+        SLEEP;
     }
 }
 
-bool is_winner(tictac tic, int id) {
-    bool res = false;
+void display_game_result(int mode, char simbol) {
+    int color = select_color(simbol);
 
-    int color = select_color(tic.simbol);
-
-    if (if_horizontal(tic, id) || if_vertical(tic, id) || if_diagonal(tic)) {
+    if (mode == 1) {
         attron(COLOR_PAIR(color));
-        mvprintw(1, 2, "Winner: %c", tic.simbol - 32);
+        mvprintw(1, 2, "Winner: %c", simbol - 32);
         attroff(COLOR_PAIR(color));
-        res =  true;
     }
 
-    if (tic.number_puts == 9 && !res) {
+    if (mode == -1) {
         attron(COLOR_PAIR(1));
         mvprintw(1, 2, "Draw    ");
         attroff(COLOR_PAIR(1));
-        res = true;
     }
-
-    return res;
 }
 
 void put_simbol(tictac *tic) {
@@ -143,7 +141,7 @@ void robot_move(tictac *tic) {
     tic->position = pos;
 
     put_simbol(tic);
-    check_win(tic);
+    evaluate_game_state(tic);
     update_field(*tic);
 
     tic->simbol = switch_simbol(*tic);
@@ -151,13 +149,38 @@ void robot_move(tictac *tic) {
 }
 
 int robot_choos(tictac tic) {
-    int i;
+    int res;
+    int o_win = find_winning_move(tic, 'o');
+    int x_win = find_winning_move(tic, 'x');
 
-    do {
-        i = rand() % 9;
-    } while (tic.field[i] != ' ');
 
-    return i + 1;
+
+    if (o_win > 0) {
+        res = o_win;
+    } else if (x_win > 0) {
+        res = x_win;
+    } else {
+        do {
+            res = rand() % 9 + 1;
+        } while (tic.field[res - 1] != ' ');
+    }
+
+    return res;
+}
+
+int find_winning_move(tictac tic, char simbol) {
+    int res = -1;
+    auto cp_field = tic.field;
+
+    for (int i = 0; i < 9; ++i) {
+        if (cp_field[i] == ' ') cp_field[i] = simbol;
+        if (check_win(cp_field, simbol)) {
+            res = i + 1;
+        }
+        cp_field = tic.field;
+    }
+
+    return res;
 }
 
 bool move(tictac *tic) {
@@ -182,7 +205,7 @@ bool move(tictac *tic) {
         break;
 
     case ' ':
-        if (check_position(*tic)) res = true;
+        if (free_position(*tic)) res = true;
         break;
 
     case 'Q':
@@ -196,11 +219,13 @@ bool move(tictac *tic) {
     return res;
 }
 
-bool check_position(tictac tic) {
-    if (tic.field[tic.position - 1] == 'x' 
-    || tic.field[tic.position - 1] == 'o') return false;
+bool free_position(tictac tic) {
+    bool res = true;
 
-    return true;
+    if (tic.field[tic.position - 1] == 'x' 
+    || tic.field[tic.position - 1] == 'o') res = false;
+
+    return res;
 }
 
 void move_up(tictac *tic) {
@@ -221,27 +246,23 @@ void move_right(tictac *tic) {
     if ((n != 3) && (n != 6) && (n != 9)) tic->position += 1;
 }
 
-bool if_horizontal(tictac tic, int id) {
-    if (tic.field[id * 3] == tic.simbol &&
-         tic.field[id * 3 + 1] == tic.simbol &&
-          tic.field[id * 3 + 2] == tic.simbol) return true;
+bool check_win(std::vector<char> field, char simbol) {
+    bool res = false;
 
-    return false;
-}
+    for (int i = 0; i < 3; ++i) {
+        if (field[i * 3] == simbol &&                                               // horizontal
+            field[i * 3 + 1] == simbol &&
+            field[i * 3 + 2] == simbol) res = true;
 
-bool if_vertical(tictac tic, int id) {
-    if (tic.field[id] == tic.simbol &&
-         tic.field[id + 3] == tic.simbol &&
-          tic.field[id + 6] == tic.simbol) return true;
+        if (field[i] == simbol &&                                                   // vertical
+            field[i + 3] == simbol &&
+            field[i + 6] == simbol) res = true;
+    }
 
-    return false;
-}
+    if ((field[0] == simbol && field[4] == simbol && field[8] == simbol) ||     // diagonal
+        (field[6] == simbol && field[4] == simbol && field[2] == simbol)) res = true;
 
-bool if_diagonal(tictac tic) {
-    if ((tic.field[0] == tic.simbol && tic.field[4] == tic.simbol && tic.field[8] == tic.simbol) || 
-        (tic.field[6] == tic.simbol && tic.field[4] == tic.simbol && tic.field[2] == tic.simbol)) return true;
-    
-    return false;
+    return res;
 }
 
 int select_color(char simbol) {
