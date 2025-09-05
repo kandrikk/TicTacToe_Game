@@ -1,4 +1,3 @@
-#include <iostream>
 #include <vector>
 #include <ncurses.h>
 #include <chrono>
@@ -20,7 +19,7 @@ typedef struct {
 void game();
 void draw_field();
 void update_field(tictac tic);
-void backlight(tictac tic);
+void backlight(int y, int x, char back);
 
 bool move(tictac *tic);
 
