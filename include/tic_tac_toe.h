@@ -19,7 +19,7 @@ typedef struct {
 void game();
 void draw_field();
 void update_field(tictac tic);
-void backlight(int y, int x, char back);
+void backlight(int y, int x, char new_simbol, char back);
 
 bool move(tictac *tic);
 

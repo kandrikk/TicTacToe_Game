@@ -10,7 +10,7 @@ void game() {
         char back = tic.field[tic.position - 1];
         int y = tic.coordinates[tic.position - 1].first;
         int x = tic.coordinates[tic.position - 1].second;
-        backlight(y, x, back);
+        backlight(y, x, ' ', back);
 
         if (move(&tic)) {
             put_simbol(&tic);
@@ -57,7 +57,7 @@ void menu(tictac *tic) {
             break;
         }
 
-        backlight(y, x, back);
+        backlight(y, x, ' ', back);
     }
 
     if (res == 2) tic->robot = true;
@@ -97,9 +97,9 @@ void update_field(tictac tic) {
     attroff(COLOR_PAIR(color2));
 }
 
-void backlight(int y, int x, char back) {
+void backlight(int y, int x, char new_simbol, char back) {
     attron(COLOR_PAIR(4));
-    mvprintw(y, x, " ");
+    mvprintw(y, x, "%c", new_simbol);
     attroff(COLOR_PAIR(4));
     refresh();
 
